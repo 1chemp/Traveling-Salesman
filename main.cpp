@@ -16,21 +16,21 @@ struct Element
         this->base = data;
     }
 	
-	void insert_after(Element* new_element) {
-		new_element->next = this->next;
-		this->next = new_element;
-	}
-
-	Element* before{};
-    
-	void insert_before(Element* before_element) {
-		before_element->before = this->before;
-		this->before = before_element;
-	}
-
-    void operator()(const int data)
+	void insertAfter(Element* next_element) 
     {
-        this->base=data;
+		next_element->next = this->next;
+		this->next = next_element;
+	}
+
+    Element* operator()(const int data)
+    {
+        this->base = data;
+        return this;
+    }
+
+    void operator=(const int data)
+    {
+        this->base = data;
     }
 
     friend std::ostream& operator<<(std::ostream& output, const Element& elem)
@@ -65,26 +65,9 @@ class TravelingSalesman
         m_row = 0;
     }
 
-public:
-    TravelingSalesman(const int* row, const int* col)
-    {
-        this->m_col = *col;
-        this->m_row = *row;
-
-        resultMatrix = new Element*[m_row];
-
-        for (int i{0}; i<m_row; i++)
-        {
-            resultMatrix[i] = new Element[m_col];
-        
-            for (int j{0}; j<m_col; j++)
-            {
-                resultMatrix[i][j](0);
-            }
-        }
-
-    }   
-    
+public:  
+    // конструктор, который по столбцам и колонкам формирует матрицу
+    // и выставляет зависимости между узлами
     TravelingSalesman(const int& row, const int& col, int** data)
     {
         this->m_row = row;
@@ -98,7 +81,10 @@ public:
         
             for (int j{0}; j<m_col; j++)
             {
-                resultMatrix[i][j](data[i][j]);
+                if (i == j)
+                    resultMatrix[i][j] = data[i][j];
+                else
+                    resultMatrix[i][j].insertAfter(resultMatrix[i][j](data[i][j]));
             }
         }
 
@@ -116,6 +102,8 @@ public:
             }
             output << "\n";
         }
+        output << "\n";
+
         return output;
    }
 
