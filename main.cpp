@@ -4,10 +4,17 @@
 
 struct Element
 {
-    char prefix[2];
 	short operating_number;
+    int base;
+
+    Element() {}
 
     Element* next{};
+
+    Element(int& data)
+    {
+        this->base = data;
+    }
 	
 	void insert_after(Element* new_element) {
 		new_element->next = this->next;
@@ -20,6 +27,20 @@ struct Element
 		before_element->before = this->before;
 		this->before = before_element;
 	}
+
+    void operator()(const int data)
+    {
+        this->base=data;
+    }
+
+    friend std::ostream& operator<<(std::ostream& output, const Element& elem)
+    {
+        output << elem.base;
+        return output;
+    }
+
+    ~Element() {}
+
 };
 
 // Нужно сделать каждый элемент структурой, 
@@ -30,7 +51,7 @@ class TravelingSalesman
 {
     int m_col;
     int m_row;
-    int** resultMatrix;
+    Element** resultMatrix;
 
     void clear()
     {
@@ -50,14 +71,16 @@ public:
         this->m_col = *col;
         this->m_row = *row;
 
-        resultMatrix = new int*[m_row];
+        resultMatrix = new Element*[m_row];
 
         for (int i{0}; i<m_row; i++)
         {
-            resultMatrix[i] = new int[m_col];
+            resultMatrix[i] = new Element[m_col];
         
             for (int j{0}; j<m_col; j++)
-                resultMatrix[i][j] = 0;
+            {
+                resultMatrix[i][j](0);
+            }
         }
 
     }   
@@ -67,14 +90,16 @@ public:
         this->m_row = row;
         this->m_col = col;
 
-        resultMatrix = new int*[m_row];
+        resultMatrix = new Element*[m_row];
 
         for (int i{0}; i<m_row; i++)
         {
-            resultMatrix[i] = new int[m_col];
+            resultMatrix[i] = new Element[m_col];
         
             for (int j{0}; j<m_col; j++)
-                resultMatrix[i][j] = data[i][j];
+            {
+                resultMatrix[i][j](data[i][j]);
+            }
         }
 
     }
@@ -240,7 +265,6 @@ int main(int argc, char* argv[])
 
         std::cout << mtx;
 
-        // realize a initial parameters
         if (*(argv+3))
         {
             if (findFlags("-m", *(argv+3)) && (*(argv+4)))
@@ -248,15 +272,15 @@ int main(int argc, char* argv[])
                 std::string spam = static_cast<std::string>(*(argv+4));
                 if (spam == "np_complete")
                 {
-                    std::cout << "Yes, True!" << std::endl;
+                    std::cout << "Do 1" << std::endl;
                 }
                 else if (spam == "np_partial")
                 {
-                    std::cout << "Yeeeaahh!" << std::endl;
+                    std::cout << "Do 2" << std::endl;
                 }
-                else std::cout << "Try again!" << std::endl;
+                else std::cout << "Try again! Wrong parameters" << std::endl;
             }
-            else std::cout << "Try again!!!" << std::endl;
+            else std::cout << "Try again! Wrong parameters" << std::endl;
         }
     }
 
