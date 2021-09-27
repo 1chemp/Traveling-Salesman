@@ -4,7 +4,7 @@
 
 struct Error
 {
-    Error(const std::string& message_) {
+    explicit Error(const std::string& message_) {
         this->message = message_;    
     }
 
@@ -25,7 +25,7 @@ struct Element
         this->base = 0;
     }
 
-    Element(int& data) {
+    explicit Element(int& data) {
         this->base = data;
     }
 	
@@ -70,22 +70,49 @@ class TravelingSalesman
         m_row = 0;
     }
 
-public:  
-    // конструктор, который по столбцам и колонкам формирует матрицу
-    // и выставляет зависимости между узлами
-    TravelingSalesman(const int& row, const int& col, int** data) {
-        this->m_row = row;
-        this->m_col = col;
+public:
+    // конструктор по умолчанию. Чтобы присваивать объект созданный по умолчанию к оъекту создану по
+    // к объекту созданному по параметризированному конструктору -
+    // необходимо сделать перегрузку оператора = для данного класса.
+    explicit TravelingSalesman() {
+        this->m_col = 1;
+        this->m_row = 1;
 
         resultMatrix = new Element*[m_row];
 
-        for (int i{0}; i<m_row; i++) {
+        for (int i{0}; i < m_row; i++) {
             resultMatrix[i] = new Element[m_col];
-        
-            for (int j{0}; j<m_col; j++) {
-                resultMatrix[i][j](data[i][j]);
-                resultMatrix[i][j].insertAfter(&data[j][i]);
+
+            for (int j{0}; j < m_col; j++) {
+                resultMatrix[i][j](0);
+                resultMatrix[i][j].insertAfter(0);
             }
+        }
+    }
+
+    // конструктор, который по столбцам и колонкам формирует матрицу
+    // и выставляет зависимости между узлами
+    explicit TravelingSalesman(const int& row, const int& col, int** data) {
+        try {
+            if (data == nullptr)
+                throw Error("Empty data for filling matrix");
+
+            this->m_row = row;
+            this->m_col = col;
+
+            resultMatrix = new Element*[m_row];
+
+            for (int i{0}; i<m_row; i++) {
+                resultMatrix[i] = new Element[m_col];
+            
+                for (int j{0}; j<m_col; j++) {
+                    resultMatrix[i][j](data[i][j]);
+                    resultMatrix[i][j].insertAfter(&data[j][i]);
+                }
+            }
+        }
+        catch (const Error& err) {
+            std::cerr << err.showErrorMessage() << std::endl;
         }
     }
     // перегрузка оператора вывода для матрицы
@@ -100,6 +127,8 @@ public:
         }
         return output;
     }
+
+    Element** getMatrix() { return this->resultMatrix; }
 
     // Деструктор - освобождаем память
     ~TravelingSalesman()
@@ -222,6 +251,7 @@ int main(int argc, char* argv[])
             "-h -- displaying information about the program\n"\
             "-m np_complete -- solves the problem by brute force\n"\
             "-m np_partial -- solves the problem in any other way\n";
+    
     try {
         if (argc <= 1)
         {
@@ -240,7 +270,7 @@ int main(int argc, char* argv[])
             int** matrix{getMatrixFromFile(path, rows_and_cols)};
 
             TravelingSalesman mtx(rows_and_cols, rows_and_cols, matrix);
-        
+
             deleteMatrix(matrix, rows_and_cols);
 
             std::cout << mtx;
