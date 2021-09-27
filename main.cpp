@@ -2,11 +2,28 @@
 #include <fstream>
 #include <string>
 
+struct Error
+{
+    Error(const std::string& message_) {
+        this->message = message_;    
+    }
+
+    std::string showErrorMessage() const {
+        return this->message;
+    }
+
+private:
+    std::string message;
+};
+
+
 struct Element
 {
     int base;
 
-    Element() {}
+    Element() {
+        this->base = 0;
+    }
 
     Element(int& data) {
         this->base = data;
@@ -16,7 +33,7 @@ struct Element
         this->next->base = *n;
     }
 
-    const int getReference() {
+    int getReference() {
         return this->next->base;
     }
 
@@ -66,14 +83,8 @@ public:
             resultMatrix[i] = new Element[m_col];
         
             for (int j{0}; j<m_col; j++) {
-                try {
-                    resultMatrix[i][j](data[i][j]);
-                    resultMatrix[i][j].insertAfter(&data[j][i]);
-                    // std::cout << resultMatrix[i][j].getReference() << std::endl;
-                }
-                catch (...) {
-                    std::cout << "Some error" << std::endl;
-                }
+                resultMatrix[i][j](data[i][j]);
+                resultMatrix[i][j].insertAfter(&data[j][i]);
             }
         }
     }
@@ -211,56 +222,61 @@ int main(int argc, char* argv[])
             "-h -- displaying information about the program\n"\
             "-m np_complete -- solves the problem by brute force\n"\
             "-m np_partial -- solves the problem in any other way\n";
-
-    if (argc <= 1)
-    {
-        std::cout << all_data;
-    }
-    else if (argc >= 2 && findFlags("-h", data))
-    {
-        std::cout << all_data;
-    }
-    else if (argc >= 2 && findFlags("-f", data))
-    {
-        const char* path = *(argv+2);
-        
-        int rows_and_cols{getRowsCols(path)};
-
-        int** matrix{getMatrixFromFile(path, rows_and_cols)};
-
-        TravelingSalesman mtx(rows_and_cols, rows_and_cols, matrix);
-    
-        deleteMatrix(matrix, rows_and_cols);
-
-        std::cout << mtx;
-
-        if (*(argv+3))
+    try {
+        if (argc <= 1)
         {
-            if (findFlags("-m", *(argv+3)) && (*(argv+4)))
+            std::cout << all_data;
+        }
+        else if (argc >= 2 && findFlags("-h", data))
+        {
+            std::cout << all_data;
+        }
+        else if (argc >= 2 && findFlags("-f", data))
+        {
+            const char* path = *(argv+2);
+            
+            int rows_and_cols{getRowsCols(path)};
+
+            int** matrix{getMatrixFromFile(path, rows_and_cols)};
+
+            TravelingSalesman mtx(rows_and_cols, rows_and_cols, matrix);
+        
+            deleteMatrix(matrix, rows_and_cols);
+
+            std::cout << mtx;
+
+            if (*(argv+3))
             {
-                std::string spam = static_cast<std::string>(*(argv+4));
-                if (spam == "np_complete")
+                if (findFlags("-m", *(argv+3)) && (*(argv+4)))
                 {
-                    std::cout << "Do 1" << std::endl;
-                }
-                else if (spam == "np_partial")
-                {
-                    std::cout << "Do 2" << std::endl;
+                    std::string spam = static_cast<std::string>(*(argv+4));
+                    if (spam == "np_complete")
+                    {
+                        std::cout << "Do 1" << std::endl;
+                    }
+                    else if (spam == "np_partial")
+                    {
+                        std::cout << "Do 2" << std::endl;
+                    }
+                    else std::cout << "Try again! Wrong parameters" << std::endl;
                 }
                 else std::cout << "Try again! Wrong parameters" << std::endl;
             }
-            else std::cout << "Try again! Wrong parameters" << std::endl;
+            else throw Error("Thats wrong parameters! Try again");
         }
+        else throw Error("Someting went wrong!");
     }
-    
+    catch (const Error& err) {
+        std::cerr << err.showErrorMessage() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "Panic!!!" << std::endl;
+    }
+
     // int rows_and_cols{getRowsCols("/home/chemp/program_projects/twoGis_test/file.txt")};
-
     // int** matrix{getMatrixFromFile("/home/chemp/program_projects/twoGis_test/file.txt", rows_and_cols)};
-
     // TravelingSalesman mtx(rows_and_cols, rows_and_cols, matrix);
-
     // deleteMatrix(matrix, rows_and_cols);
-
     // std::cout << mtx;
 
     data = nullptr;
