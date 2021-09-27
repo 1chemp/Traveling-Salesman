@@ -4,48 +4,38 @@
 
 struct Element
 {
-	short operating_number;
     int base;
 
     Element() {}
 
-    Element* next{};
-
-    Element(int& data)
-    {
+    Element(int& data) {
         this->base = data;
     }
 	
-	void insertAfter(Element* next_element) 
-    {
-		next_element->next = this->next;
-		this->next = next_element;
-	}
+    void insertAfter(int* n) {
+        this->next->base = *n;
+    }
 
-    Element* operator()(const int data)
-    {
+    const int getReference() {
+        return this->next->base;
+    }
+
+    Element* operator()(const int data) {
+        next = new Element[1];
         this->base = data;
         return this;
     }
 
-    void operator=(const int data)
-    {
-        this->base = data;
-    }
-
-    friend std::ostream& operator<<(std::ostream& output, const Element& elem)
-    {
+    friend std::ostream& operator<<(std::ostream& output, const Element& elem) {
         output << elem.base;
         return output;
     }
 
-    ~Element() {}
+    ~Element() {next = nullptr;}
 
+private:
+    Element* next;
 };
-
-// Нужно сделать каждый элемент структурой, 
-// каждый элемент связать с предыдущим и с последующим
-// 
 
 class TravelingSalesman
 {
@@ -53,10 +43,8 @@ class TravelingSalesman
     int m_row;
     Element** resultMatrix;
 
-    void clear()
-    {
-        for (int i{0}; i < m_row; i++)
-        {
+    void clear() {
+        for (int i{0}; i < m_row; i++) {
             delete[] resultMatrix[i];
         }
         delete[] resultMatrix;
@@ -68,45 +56,41 @@ class TravelingSalesman
 public:  
     // конструктор, который по столбцам и колонкам формирует матрицу
     // и выставляет зависимости между узлами
-    TravelingSalesman(const int& row, const int& col, int** data)
-    {
+    TravelingSalesman(const int& row, const int& col, int** data) {
         this->m_row = row;
         this->m_col = col;
 
         resultMatrix = new Element*[m_row];
 
-        for (int i{0}; i<m_row; i++)
-        {
+        for (int i{0}; i<m_row; i++) {
             resultMatrix[i] = new Element[m_col];
         
-            for (int j{0}; j<m_col; j++)
-            {
-                if (i == j)
-                    resultMatrix[i][j] = data[i][j];
-                else
-                    resultMatrix[i][j].insertAfter(resultMatrix[i][j](data[i][j]));
+            for (int j{0}; j<m_col; j++) {
+                try {
+                    resultMatrix[i][j](data[i][j]);
+                    resultMatrix[i][j].insertAfter(&data[j][i]);
+                    // std::cout << resultMatrix[i][j].getReference() << std::endl;
+                }
+                catch (...) {
+                    std::cout << "Some error" << std::endl;
+                }
             }
         }
-
     }
-
-   friend std::ostream& operator<<(std::ostream& output, const TravelingSalesman& matrixValid)
-   {
-        output << "\n";
-
-        for (int i{0}; i < matrixValid.m_row; i++)
-        {
-            for (int j{0}; j < matrixValid.m_col; j++)
-            {
-                output << matrixValid.resultMatrix[i][j] << " ";
+    // перегрузка оператора вывода для матрицы
+    friend std::ostream& operator<<(std::ostream& output, const TravelingSalesman& matrixValid) {
+        for (int i{0}; i < matrixValid.m_row; i++) {
+            for (int j{0}; j < matrixValid.m_col; j++) {
+                // перед тем как выводить, необходимо перегрузить оператор вывода в структуре Element
+                output << matrixValid.resultMatrix[i][j] << " " << " -> (" << 
+                matrixValid.resultMatrix[i][j].getReference() << ") ";
             }
             output << "\n";
         }
-        output << "\n";
-
         return output;
-   }
+    }
 
+    // Деструктор - освобождаем память
     ~TravelingSalesman()
     {
         for (int i{m_row}; i<m_row; i++)
@@ -118,8 +102,10 @@ public:
     
 };
 
-int getRowsCols(const char* file_name)
-{
+// получаем количество строк и столбцов
+// число строк должно быть равно числу 
+// столбцов поэтому возвращается одно число
+int getRowsCols(const char* file_name) {
     int count = 0;
     char c;
 
@@ -133,17 +119,17 @@ int getRowsCols(const char* file_name)
     return count;
 }
 
+// Освобождаем память выделенной матрицы
 template <typename T>
-void deleteMatrix(T** matrix, const int& counter)
-{
+void deleteMatrix(T** matrix, const int& counter) {
     for (int i{0}; i<counter; i++)
         delete[] matrix[i];
 
     delete[] matrix;
 }
 
-int** fromStrToInt(std::string** matrix, const int& count)
-{
+// Переводим строковый формат в целочисленный
+int** fromStrToInt(std::string** matrix, const int& count) {
     int** res_matrix;
     res_matrix = new int*[count];
 
@@ -160,9 +146,8 @@ int** fromStrToInt(std::string** matrix, const int& count)
     return res_matrix;
 }
 
-
-int** getMatrixFromFile(const char* file_name, const int& count)
-{
+// Выделяем матрицу из файла
+int** getMatrixFromFile(const char* file_name, const int& count) {
     std::string* res;
     std::string** data;
     
@@ -170,23 +155,20 @@ int** getMatrixFromFile(const char* file_name, const int& count)
     data = new std::string*[count];
 
     std::ifstream file{file_name};
-    if (file.is_open())
-    {   
+    if (file.is_open()) {   
         std::string spam;
         int counter = 0;
-        for (file>>spam; !file.eof(); file>>spam)
-        {   
+
+        for (file>>spam; !file.eof(); file>>spam) {   
             res[counter] = spam;
             counter++;
         }
 
         counter = 0;
-        for (int i{0}; i < count; i++)
-        {
+        for (int i{0}; i < count; i++) {
             data[i] = new std::string[count];
 
-            for (int j{0} ; j < count; j++)
-            {
+            for (int j{0} ; j < count; j++) {
                 data[i][j] = res[counter];
                 ++counter;
             }
@@ -198,18 +180,17 @@ int** getMatrixFromFile(const char* file_name, const int& count)
     return fromStrToInt(data, count);
 }
 
+// Ищем флаги -f, -m, -h
 bool findFlags(const char* searched, const char* all)
 {
     int i{0}, j{0};
 
-    while (all[i]!=0)
-    {
+    while (all[i]!=0) {
         if (all[i] == searched[1])
             break;
         i++;
     }
-    while (all[j]!=0)
-    {
+    while (all[j]!=0) {
         if (all[j] == searched[0])
             break;
         j++;
@@ -271,7 +252,16 @@ int main(int argc, char* argv[])
             else std::cout << "Try again! Wrong parameters" << std::endl;
         }
     }
+    
+    // int rows_and_cols{getRowsCols("/home/chemp/program_projects/twoGis_test/file.txt")};
 
+    // int** matrix{getMatrixFromFile("/home/chemp/program_projects/twoGis_test/file.txt", rows_and_cols)};
+
+    // TravelingSalesman mtx(rows_and_cols, rows_and_cols, matrix);
+
+    // deleteMatrix(matrix, rows_and_cols);
+
+    // std::cout << mtx;
 
     data = nullptr;
     return 0;
