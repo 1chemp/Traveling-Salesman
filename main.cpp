@@ -1,6 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+// #include <thread>
+// #include <future>
+// #include <atomic>
 
 struct Error
 {
@@ -20,31 +23,54 @@ private:
 struct Element
 {
     int base;
+    short root;
+    int x, y;
 
     Element() {
         this->base = 0;
+        this->root = -1;
     }
 
     explicit Element(int& data) {
         this->base = data;
+        this->root = -1;
     }
 	
-    void insertAfter(int* n) {
+    void insertAfter(int* n, int* x, int* y) {
         this->next->base = *n;
+        this->next->root = -1;
+        this->next->x = *x;
+        this->next->y = *y;
     }
 
     int getReference() {
         return this->next->base;
     }
 
-    Element* operator()(const int data) {
+    int* getXandY() {
+        int* arr = new int[2];
+        arr[0] = this->x;
+        arr[1] = this->y;
+        return arr;
+    }
+
+    Element* operator()(const int data, int* x_m, int* y_m) {
         next = new Element[1];
         this->base = data;
+        this->x = *x_m;
+        this->y = *y_m;
+
+        if (x == y)
+            this->root = x;
+        else
+            this->root = -1;
+
         return this;
     }
 
     friend std::ostream& operator<<(std::ostream& output, const Element& elem) {
         output << elem.base;
+
         return output;
     }
 
@@ -84,8 +110,7 @@ public:
             resultMatrix[i] = new Element[m_col];
 
             for (int j{0}; j < m_col; j++) {
-                resultMatrix[i][j](0);
-                resultMatrix[i][j].insertAfter(0);
+                resultMatrix[i][j](0, &i, &j);
             }
         }
     }
@@ -106,8 +131,8 @@ public:
                 resultMatrix[i] = new Element[m_col];
             
                 for (int j{0}; j<m_col; j++) {
-                    resultMatrix[i][j](data[i][j]);
-                    resultMatrix[i][j].insertAfter(&data[j][i]);
+                    resultMatrix[i][j](data[i][j], &i, &j);
+                    resultMatrix[i][j].insertAfter(&data[j][i], &j, &i);
                 }
             }
         }
@@ -115,6 +140,31 @@ public:
             std::cerr << err.showErrorMessage() << std::endl;
         }
     }
+
+
+    void bruteForceSolver() {
+        std::cout << "Solving this problem by Brute Force!" << std::endl;
+        // int sum = 0;
+        int node;
+        int finish;
+        std::cout << "Enter an integer number, it's would be the node: ";
+        std::cin >> node;
+        std::cout << "Enter a finish node (an integer number): ";
+        std::cin >> finish;
+
+        int some = resultMatrix[node][finish].base;            
+        if (some && some != 0) {
+            std::cout << "[+] We are search a minimal path: " << some << std::endl;
+        }
+        else if (resultMatrix[node][finish].getReference() && resultMatrix[node][finish].getReference() != 0) {
+            std::cout << "[+] We are search a minimal path: " << resultMatrix[node][finish].getReference() << std::endl; 
+        }
+    }
+
+    void algorithmDijkstraSolver() {
+        std::cout << "Solve this problem by Dijkstra Algorihm" << std::endl;
+    }
+
     // перегрузка оператора вывода для матрицы
     friend std::ostream& operator<<(std::ostream& output, const TravelingSalesman& matrixValid) {
         for (int i{0}; i < matrixValid.m_row; i++) {
@@ -125,6 +175,7 @@ public:
             }
             output << "\n";
         }
+
         return output;
     }
 
@@ -282,7 +333,7 @@ int main(int argc, char* argv[])
                     std::string spam = static_cast<std::string>(*(argv+4));
                     if (spam == "np_complete")
                     {
-                        std::cout << "Do 1" << std::endl;
+                        mtx.bruteForceSolver();
                     }
                     else if (spam == "np_partial")
                     {
